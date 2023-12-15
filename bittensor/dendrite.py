@@ -381,6 +381,9 @@ class dendrite(torch.nn.Module):
             Union[AsyncGenerator, bittensor.Synapse, List[bittensor.Synapse]]: If a single Axon is targeted, returns its response.
             If multiple Axons are targeted, returns a list of their responses.
         """
+        bittensor.logging.trace(
+            "Test that we are inside the submodule version of bittensor."
+        )
         is_list = True
         # If a single axon is provided, wrap it in a list for uniform processing
         if not isinstance(axons, list):
@@ -513,6 +516,8 @@ class dendrite(torch.nn.Module):
         request_name = synapse.__class__.__name__
         url = self._get_endpoint_url(target_axon, request_name=request_name)
 
+        bittensor.logging.trace("About to preprocess the synamse for making a request.")
+
         # Preprocess synapse for making a request
         synapse = self.preprocess_synapse_for_request(target_axon, synapse, timeout)
 
@@ -520,11 +525,17 @@ class dendrite(torch.nn.Module):
             # Log outgoing request
             self._log_outgoing_request(synapse)
 
+            headers = synapse.to_headers()
+            json = synapse.dict()
+            bittensor.logging.trace(
+                f"About to post with headers: {headers} and json: {json}"
+            )
+
             # Make the HTTP POST request
             async with (await self.session).post(
                 url,
-                headers=synapse.to_headers(),
-                json=synapse.dict(),
+                headers=headers,
+                json=json,
                 timeout=timeout,
             ) as response:
                 # Extract the JSON response from the server
@@ -534,6 +545,8 @@ class dendrite(torch.nn.Module):
 
             # Set process time and log the response
             synapse.dendrite.process_time = str(time.time() - start_time)
+
+            bittensor.logging.trace("Finished posting the request to the synapse.")
 
         except Exception as e:
             self._handle_request_errors(synapse, request_name, e)
@@ -548,6 +561,7 @@ class dendrite(torch.nn.Module):
 
             # Return the updated synapse object after deserializing if requested
             if deserialize:
+                bittensor.logging.trace("We should not be attempting to deserialize our protocol messages.")
                 return synapse.deserialize()
             else:
                 return synapse
