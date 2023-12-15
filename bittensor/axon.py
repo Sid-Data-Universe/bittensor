@@ -1011,10 +1011,6 @@ class AxonMiddleware(BaseHTTPMiddleware):
         start_time = time.time()
 
         try:
-            # Set up the synapse from its headers.
-            bittensor.logging.trace(
-                f"Incoming axon request: {request.json()} with body: {request.json().body}"
-            )
             synapse: bittensor.Synapse = await self.preprocess(request)
 
             # Logs the start of the request processing
